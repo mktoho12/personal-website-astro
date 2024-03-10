@@ -1,0 +1,41 @@
+---
+import BlogPost from "@components/BlogPost.astro"
+import BaseLayout from "@layouts/BaseLayout.astro"
+import type { Frontmatter } from "@layouts/MarkdownPostLayout.astro"
+import type {
+  GetStaticPaths,
+  InferGetStaticParamsType,
+  MarkdownInstance,
+} from "astro"
+
+export const getStaticPaths = (async () => {
+  const allPosts: MarkdownInstance<Frontmatter>[] =
+    await Astro.glob<Frontmatter>("../posts/*.md")
+  const tags = [
+    ...new Set<string>(allPosts.flatMap((post) => post.frontmatter.tags)),
+  ]
+
+  return tags.map((tag) => ({
+    params: { tag },
+    props: {
+      posts: allPosts.filter((post) => post.frontmatter.tags?.includes(tag)),
+    },
+  }))
+}) satisfies GetStaticPaths
+
+type Params = InferGetStaticParamsType<typeof getStaticPaths>
+
+const { tag } = Astro.params as Params
+const { posts } = Astro.props
+---
+
+<BaseLayout pageTitle={tag}>
+  <p>Posts tagged with {tag}</p>
+  <ul>
+    {
+      posts.map((post) => (
+        <BlogPost url={post.url!} title={post.frontmatter.title} />
+      ))
+    }
+  </ul>
+</BaseLayout>
